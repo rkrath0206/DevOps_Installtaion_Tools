@@ -1,4 +1,4 @@
-JENKINS INSTALLATION ON UBUNTU EC2
+JENKINS INSTALLATION ON UBUNTU EC2 AWS
 ====================================
 
 Prerequisites
