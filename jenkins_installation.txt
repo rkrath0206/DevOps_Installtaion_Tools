@@ -1,0 +1,346 @@
+JENKINS INSTALLATION ON UBUNTU EC2
+====================================
+
+Prerequisites
+-------------
+- Ubuntu EC2 instance
+- SSH access to the EC2 instance
+- At least 2 GB RAM recommended
+- Security Group should allow SSH (22)
+- Allow Jenkins port 8080 if you want to access Jenkins from a browser
+
+IMPORTANT:
+Run the installation commands with sudo.
+Do NOT run the installation script as a normal user without sudo.
+
+STEP 1: Connect to EC2
+----------------------
+SSH into your Ubuntu EC2 instance.
+
+Example:
+ssh -i your-key.pem ubuntu@<EC2-PUBLIC-IP>
+
+
+STEP 2: Update packages
+-----------------------
+sudo apt update
+sudo apt upgrade -y
+
+
+STEP 3: Install Java
+--------------------
+Jenkins requires Java.
+
+Install OpenJDK 21:
+
+sudo apt install fontconfig openjdk-21-jre -y
+
+Check Java:
+
+java -version
+
+Expected output should show Java 21.
+
+
+STEP 4: Add Jenkins repository key
+----------------------------------
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc   https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+
+
+STEP 5: Add Jenkins repository
+------------------------------
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+
+STEP 6: Update package list
+---------------------------
+sudo apt update
+
+
+STEP 7: Install Jenkins
+-----------------------
+sudo apt install jenkins -y
+
+
+STEP 8: Start Jenkins
+---------------------
+sudo systemctl start jenkins
+
+
+STEP 9: Enable Jenkins at boot
+-----------------------------
+This makes Jenkins start automatically after an EC2 reboot.
+
+sudo systemctl enable jenkins
+
+
+STEP 10: Check Jenkins status
+----------------------------
+sudo systemctl status jenkins
+
+You should see:
+
+Active: active (running)
+
+Press q to exit the status screen.
+
+
+STEP 11: Check Jenkins port
+---------------------------
+Jenkins normally runs on port 8080.
+
+sudo ss -lntp | grep 8080
+
+You should see Jenkins listening on port 8080.
+
+
+STEP 12: Configure AWS Security Group
+-------------------------------------
+Go to:
+
+AWS Console
+  -> EC2
+  -> Instances
+  -> Select your instance
+  -> Security
+  -> Security Groups
+  -> Inbound rules
+  -> Edit inbound rules
+
+Add:
+
+Type: Custom TCP
+Port: 8080
+Source: My IP
+
+For temporary testing, you can use:
+
+Source: 0.0.0.0/0
+
+NOTE:
+Using 0.0.0.0/0 exposes Jenkins to the internet.
+For better security, allow only your own IP address whenever possible.
+
+
+STEP 13: Open Jenkins in browser
+--------------------------------
+Use:
+
+http://<EC2-PUBLIC-IP>:8080
+
+Example:
+
+http://13.234.100.10:8080
+
+
+STEP 14: Get Jenkins initial admin password
+-------------------------------------------
+Run:
+
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+Copy the password and paste it into the Jenkins setup page.
+
+
+STEP 15: Complete Jenkins setup
+------------------------------
+On the Jenkins web page:
+
+1. Enter the initial administrator password.
+2. Select "Install suggested plugins".
+3. Create your Jenkins admin user.
+4. Continue the setup.
+5. Start using Jenkins.
+
+
+USEFUL JENKINS COMMANDS
+=======================
+
+Check status:
+sudo systemctl status jenkins
+
+Start Jenkins:
+sudo systemctl start jenkins
+
+Stop Jenkins:
+sudo systemctl stop jenkins
+
+Restart Jenkins:
+sudo systemctl restart jenkins
+
+Enable at boot:
+sudo systemctl enable jenkins
+
+Disable automatic startup:
+sudo systemctl disable jenkins
+
+View Jenkins logs:
+sudo journalctl -u jenkins
+
+View recent Jenkins logs:
+sudo journalctl -u jenkins -n 100
+
+Follow Jenkins logs live:
+sudo journalctl -u jenkins -f
+
+Check Jenkins service:
+sudo systemctl is-active jenkins
+
+Check Jenkins port:
+sudo ss -lntp | grep 8080
+
+
+JENKINS IMPORTANT DIRECTORIES
+=============================
+
+Jenkins home:
+ /var/lib/jenkins
+
+Jenkins configuration:
+ /etc/default/jenkins
+
+Jenkins logs:
+ /var/log/jenkins/
+
+Initial admin password:
+ /var/lib/jenkins/secrets/initialAdminPassword
+
+Jenkins workspace:
+ /var/lib/jenkins/workspace/
+
+
+IF JENKINS DOES NOT OPEN ON PORT 8080
+=====================================
+
+1. Check Jenkins status:
+
+sudo systemctl status jenkins
+
+2. Check whether port 8080 is listening:
+
+sudo ss -lntp | grep 8080
+
+3. Check Jenkins logs:
+
+sudo journalctl -u jenkins -n 100 --no-pager
+
+4. Check the AWS Security Group:
+   Make sure inbound TCP port 8080 is allowed.
+
+5. Check the EC2 instance:
+   Make sure the instance is running and you are using the current Public IPv4 address.
+
+6. Restart Jenkins:
+
+sudo systemctl restart jenkins
+
+
+JAVA VERSION PROBLEM
+====================
+
+If Jenkins fails because of an unsupported Java version, check:
+
+java -version
+
+Also check which Java installations exist:
+
+update-alternatives --list java
+
+Select the required Java version:
+
+sudo update-alternatives --config java
+
+Then restart Jenkins:
+
+sudo systemctl restart jenkins
+
+
+JENKINS + DOCKER
+================
+
+If Jenkins needs to execute Docker commands, install Docker first.
+
+Check Docker:
+
+docker --version
+
+Add Jenkins to the Docker group:
+
+sudo usermod -aG docker jenkins
+
+Restart Jenkins:
+
+sudo systemctl restart jenkins
+
+IMPORTANT:
+After changing group membership, Jenkins may need to restart or the service/session may need to be refreshed.
+
+Check:
+
+sudo -u jenkins docker ps
+
+
+JENKINS + MAVEN
+===============
+
+For Java/Maven projects, install Maven:
+
+sudo apt install maven -y
+
+Check:
+
+mvn -version
+
+Jenkins can then be configured to use Maven for Java builds.
+
+
+JENKINS + GIT
+=============
+
+Install Git:
+
+sudo apt install git -y
+
+Check:
+
+git --version
+
+
+BASIC INSTALLATION SUMMARY
+===========================
+
+sudo apt update
+
+sudo apt install fontconfig openjdk-21-jre -y
+
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc   https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+sudo apt update
+
+sudo apt install jenkins -y
+
+sudo systemctl start jenkins
+
+sudo systemctl enable jenkins
+
+sudo systemctl status jenkins
+
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+
+IMPORTANT EC2 NOTES
+===================
+
+1. Jenkins runs as the "jenkins" Linux user.
+2. Jenkins normally uses TCP port 8080.
+3. AWS Security Group must allow port 8080 for browser access.
+4. Always use sudo for system-level installation commands.
+5. Enable Jenkins so it automatically starts after an EC2 reboot.
+6. Do not expose Jenkins publicly to 0.0.0.0/0 in a production environment unless you have appropriate security controls.
+7. If the EC2 instance gets a new public IP after a stop/start, use the new public IP in the browser URL.
+
+
+END
+===
